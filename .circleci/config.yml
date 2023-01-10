@@ -5,6 +5,20 @@ orbs:
   # welcome: circleci/welcome-orb@0.4.1
   # aws-cli: circleci/aws-cli@2.0.3
 # Define the jobs we want to run for this project
+
+
+commands:
+   # Exercise - Rollback
+   destroy_environment:
+     steps:
+       - run:
+           name: Destroy environment
+           # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
+           # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+           when: on_fail
+           command: |
+             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
+             
 jobs:
   build:  # Choose any name, such as `build`
       # The primary container, where your job's commands will run
@@ -16,37 +30,50 @@ jobs:
         - run: pwd
         - run: ls -larth
         
-  create_infrastructure: 
-      docker:
+# Exercise - Rollback
+    create_infrastructure: 
+        docker:
         - image: amazon/aws-cli
-      steps:
+        steps:
         - checkout
         - run:
             name: Create Cloudformation Stack
             command: |
-              aws cloudformation deploy \
+                aws cloudformation deploy \
                 --template-file template.yml \
-                --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+                --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7} \
                 --region us-east-1
 
 
     # Exercise: Config and Deployment
-  configure_infrastructure: 
+    configure_infrastructure: 
+        docker:
+        - image: python:3.7-alpine3.11
+        steps:
+        - checkout
+        - add_ssh_keys:
+                # You can get this ID in the section where you registered the SSH Key
+                fingerprints: ["35:25:a4:1d:98:5e:04:bb:b0:ee:2e:d7:e9:52:11:75"] 
+        - run:
+            name: Install Ansible
+            command: |
+                apk add --update ansible
+        - run:
+            name: Run Playbook and Configure server
+            command: |
+                ansible-playbook -i inventory.txt main.yml
+
+
+                # Exercise: Smoke Testing
+    smoke_test:
     docker:
-      - image: python:3.7-alpine3.11
+    - image: alpine:latest
     steps:
-      - checkout
-      - add_ssh_keys:
-              # You can get this ID in the section where you registered the SSH Key
-              fingerprints: ["35:25:a4:1d:98:5e:04:bb:b0:ee:2e:d7:e9:52:11:75"] 
-      - run:
-          name: Install Ansible
-          command: |
-             apk add --update ansible
-      - run:
-          name: Run Playbook and Configure server
-          command: |
-            ansible-playbook -i inventory.txt main.yml
+    - run:
+        name: Test job
+        # Fail the job intentionally to simulate an error.
+        command:  return 1
+    - destroy_environment  
             
 # Sequential workflow
 workflows:
@@ -54,4 +81,5 @@ workflows:
   myWorkflow:
     jobs:
       - build
-      - configure_infrastructure
+      - create_infrastructure
+      - smoke_test
