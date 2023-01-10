@@ -1,2 +1,2 @@
 [all]
-44.200.37.202
+ec2-44-200-37-202.compute-1.amazonaws.com
