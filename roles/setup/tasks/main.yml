@@ -19,14 +19,14 @@
 - name: "Install PM2"
   shell: npm install pm2 -g
 
-- name: "Create Web Directory"
-  become: yes
-  shell: mkdir ~/web
+##- name: "Create Web Directory"
+ ## become: yes
+ ## shell: mkdir ~/web
 
 - name: "Copy Web Server"
   become: yes
   copy:
-    src: /home/ec2-user/ex2/roles/setup/files/index.js 
+    src: ~/roles/setup/files/index.js 
     dest: /web/
 
 - name: "Start Web Server"
