@@ -35,14 +35,14 @@ jobs:
       docker:
        - image: amazon/aws-cli
       steps:
-      - checkout
-      - run:
-          name: Create Cloudformation Stack
-          command: |
-              aws cloudformation deploy \
-              --template-file template.yml \
-              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7} \
-              --region us-east-1
+        - checkout
+        - run:
+            name: Create Cloudformation Stack
+            command: |
+                aws cloudformation deploy \
+                --template-file template.yml \
+                --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7} \
+                --region us-east-1
 
 
     # Exercise: Config and Deployment
@@ -50,30 +50,30 @@ jobs:
       docker:
         - image: python:3.7-alpine3.11
       steps:
-      - checkout
-      - add_ssh_keys:
-              # You can get this ID in the section where you registered the SSH Key
-              fingerprints: ["35:25:a4:1d:98:5e:04:bb:b0:ee:2e:d7:e9:52:11:75"] 
-      - run:
-          name: Install Ansible
-          command: |
-              apk add --update ansible
-      - run:
-          name: Run Playbook and Configure server
-          command: |
-              ansible-playbook -i inventory.txt main.yml
+        - checkout
+        - add_ssh_keys:
+                # You can get this ID in the section where you registered the SSH Key
+                fingerprints: ["35:25:a4:1d:98:5e:04:bb:b0:ee:2e:d7:e9:52:11:75"] 
+        - run:
+            name: Install Ansible
+            command: |
+                apk add --update ansible
+        - run:
+            name: Run Playbook and Configure server
+            command: |
+                ansible-playbook -i inventory.txt main.yml
 
 
                 # Exercise: Smoke Testing
   smoke_test:
     docker:
-    - image: amazon/aws-cli
+      - image: amazon/aws-cli
     steps:
-    - run:
-        name: Test job
-        # Fail the job intentionally to simulate an error.
-        command:  return 1
-    - destroy_environment
+      - run:
+          name: Test job
+          # Fail the job intentionally to simulate an error.
+          command:  return 1
+      - destroy_environment
 
   create_and_deploy_front_end:
     docker:
